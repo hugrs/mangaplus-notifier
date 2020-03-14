@@ -7,8 +7,9 @@ from datetime import datetime,date
 from pathlib import Path
 import proto.title_detail_pb2 as title_detail_pb2
 import gi
+gi.require_version("Gtk","3.0")
 gi.require_version("Gio","2.0")
-from gi.repository import Gio
+from gi.repository import Gtk, Gio
 
 DATA_DIR = os.path.join(Path.home(), ".mangaplus")
 BLOB_FILE = os.path.join(DATA_DIR, "response-blob")
@@ -47,9 +48,41 @@ def get_latest_chapter(title_info):
     return latest_chapter
 
 
-def show_notification(text):
-    pass
+class Application(Gtk.Application):
+    APP_ID = "com.swarm.mangaplusfetcher"
 
+    def __init__(self):
+        if not Gtk.Application.id_is_valid(self.APP_ID):
+            print("Application ID invalid", self.APP_ID)
+            sys.exit(1)
+        super().__init__(application_id=self.APP_ID, flags=Gio.ApplicationFlags.FLAGS_NONE)
+        self.connect("startup", self.on_startup)
+        self.connect("activate", self.on_activate)
+        self.hold()
+
+    def on_startup(self, application):
+        print("Startup")
+        action_dismiss = Gio.SimpleAction.new("dismiss")
+        action_dismiss.connect("activate", self.on_action_dismiss)
+        self.add_action(action_dismiss)
+
+    def on_activate(self, application):
+        print("Activated")
+        self.show_notification("notif-test", "Title", "Body")
+
+    def on_action_dismiss(self, action, parameter):
+        print("bozo")
+        self.release()
+
+    def show_notification(self, id, title, body):
+        notification = Gio.Notification.new(title)
+        notification.set_body(body)
+        notification.add_button("Dismiss", "app.dismiss")
+        self.send_notification(id, notification)
+
+
+app = Application()
+app.run()
 
 # Create hidden directory under $HOME
 if not os.path.isdir(DATA_DIR):
@@ -58,7 +91,9 @@ if not os.path.isdir(DATA_DIR):
 if not os.path.isfile(BLOB_FILE):
     fetch_and_save_title_info()
     latest_chapter = get_latest_chapter(read_blob())
-    show_notification(f"Latest chapter: {latest_chapter.subTitle}\nReleased on {datetime.fromtimestamp(latest_chapter.startTimeStamp)}")
+    app.show_notification("latest-chapter",
+        "SPYxFAMILY"
+        f"Latest chapter: {latest_chapter.subTitle}\nReleased on {datetime.fromtimestamp(latest_chapter.startTimeStamp)}")
     sys.exit(0)
 
 title_info = read_blob()
@@ -77,21 +112,6 @@ if datetime.now() > date_next_release:
     if date_new_chapter > date_current_chapter:
         print(f"A new chapter has been released! {new_chapter.name} - {new_chapter.subTitle}")
         print(f"Released on {date_new_chapter}")
-        show_notification(f"A new chapter has been released!\n{new_chapter.subTitle}")
-
-def on_activate(application):
-    print("Activated")
-
-    notification = Gio.Notification.new("Title")
-    notification.set_body("Body")
-
-    application.send_notification("new-chapter", notification)
-
-APP_ID = "com.swarm.mangaplusfetcher"
-if not Gio.Application.id_is_valid(APP_ID):
-    print("Application ID invalid", APP_ID)
-    sys.exit(1)
-Application = Gio.Application.new(APP_ID, Gio.ApplicationFlags.FLAGS_NONE)
-Application.connect("activate", on_activate)
-Application.run()
-
+        app.show_notification("new-chapter",
+            "SPYxFAMILY"
+            f"A new chapter has been released!\n{new_chapter.subTitle}")
