@@ -70,15 +70,15 @@ class Application(Gtk.Application):
         self.connect("activate", self.main)
 
     def on_startup(self, application):
-        action_default = Gio.SimpleAction.new("savechapter")
-        action_default.connect("activate", self.save_chapter_and_release)
+        action_default = Gio.SimpleAction.new("notification.clicked")
+        action_default.connect("activate", self.notification_acknowledge)
         self.add_action(action_default)
 
     def timeout_callback(self):
         self.release()
         return False
 
-    def save_chapter_and_release(self, action, parameter):
+    def notification_acknowledge(self, action, parameter):
         save_metadata({"last_acknowledged_chapter": self.current_chapter.name})
         print("Dismissed!")
         self.release()
@@ -87,7 +87,7 @@ class Application(Gtk.Application):
         notification = Gio.Notification.new(title)
         notification.set_body(body)
         if wait_for_dismiss:
-            notification.set_default_action("app.savechapter")
+            notification.set_default_action("app.notification.clicked")
             GLib.timeout_add_seconds(30, self.timeout_callback)
             self.hold()
         self.send_notification(id, notification)
