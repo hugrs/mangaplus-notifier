@@ -7,8 +7,8 @@ from datetime import datetime,date
 from pathlib import Path
 import proto.title_detail_pb2 as title_detail_pb2
 import gi
-gi.require_version("Notify","0.7")
-from gi.repository import Notify
+gi.require_version("Gio","2.0")
+from gi.repository import Gio
 
 DATA_DIR = os.path.join(Path.home(), ".mangaplus")
 BLOB_FILE = os.path.join(DATA_DIR, "response-blob")
@@ -46,20 +46,10 @@ def get_latest_chapter(title_info):
         print("Consider fixing the script to retrieve the chapter differently")
     return latest_chapter
 
-def on_notification_clicked():
-    print("CLick")
 
 def show_notification(text):
-    n = Notify.Notification.new("SPYxFAMILY", body=text)
-    n.add_action("actionid",
-        label="Mon label",
-        callback=on_notification_clicked)
-    n.show()
+    pass
 
-
-Notify.init(sys.argv[0])
-
-show_notification("test")
 
 # Create hidden directory under $HOME
 if not os.path.isdir(DATA_DIR):
@@ -89,4 +79,19 @@ if datetime.now() > date_next_release:
         print(f"Released on {date_new_chapter}")
         show_notification(f"A new chapter has been released!\n{new_chapter.subTitle}")
 
-Notify.uninit()
+def on_activate(application):
+    print("Activated")
+
+    notification = Gio.Notification.new("Title")
+    notification.set_body("Body")
+
+    application.send_notification("new-chapter", notification)
+
+APP_ID = "com.swarm.mangaplusfetcher"
+if not Gio.Application.id_is_valid(APP_ID):
+    print("Application ID invalid", APP_ID)
+    sys.exit(1)
+Application = Gio.Application.new(APP_ID, Gio.ApplicationFlags.FLAGS_NONE)
+Application.connect("activate", on_activate)
+Application.run()
+
