@@ -130,3 +130,6 @@ dmypy.json
 
 # Visual studio code settings
 .vscode/
+
+# reverse temp folder
+reverse/
