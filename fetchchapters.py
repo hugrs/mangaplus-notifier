@@ -108,7 +108,7 @@ class Application(Gtk.Application):
             save_metadata({"last_acknowledged_chapter": latest_chapter.name})
             
             self.show_notification("latest-chapter",
-                "SPYxFAMILY",
+                title_info.detail.title.name,
                 f"Latest chapter: {latest_chapter.subTitle}\nReleased on {datetime.fromtimestamp(latest_chapter.startTimeStamp)}")
             return
 
@@ -130,7 +130,7 @@ class Application(Gtk.Application):
             metadata = json.load(file)
             if current_chapter.name != metadata["last_acknowledged_chapter"]:
                 self.show_notification("new-chapter",
-                    "SPYxFAMILY",
+                    title_info.detail.title.name,
                     f"A new chapter has been released!\n{current_chapter.subTitle}",
                     wait_for_dismiss=True)
 
